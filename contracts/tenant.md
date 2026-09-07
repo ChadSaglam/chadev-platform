@@ -1,18 +1,24 @@
-# Contract: Tenant (draft — Phase 1.4)
+# Contract: Tenant Model
 
-Status: **DRAFT**.
+> Status: DRAFT → align in buchhaltung during Phase 1.4 via reversible Alembic migration.
 
-## Today
+## Target columns (both apps)
 
-| Column | billing | buchhaltung |
+| Column | Type | Notes |
 |---|---|---|
-| `id` | int | int |
-| `name` | ✓ | ✓ |
-| `slug` | ✓ | – |
-| plan | `subscription_plan` (default `trial`) | `plan` (default `free`) |
-| `trial_ends_at` | ✓ | – |
-| `is_active` | ✓ | – |
+| `id` | uuid/pk | existing in both |
+| `plan` | text/enum | buchhaltung has `plan`; billing has `subscription_plan` — **rename target: `plan`** |
+| `trial_ends_at` | timestamptz, nullable | billing has it; buchhaltung needs to add |
+| `is_active` | boolean, default true | billing has it; buchhaltung needs to add |
 
-## Target (to agree in 1.4)
+## Migration plan (buchhaltung)
 
-`tenants(id, name, slug, plan, trial_ends_at, is_active, created_at)` in both apps. buchhaltung adds the missing columns via a reversible Alembic migration.
+1. New reversible Alembic revision: add `trial_ends_at` (nullable), `is_active` (default `true`, backfill existing rows).
+2. Keep `plan` column name as-is (already matches target; billing will rename `subscription_plan` → `plan` in a separate billing-side migration, tracked as follow-up, not in this phase to limit blast radius).
+3. No data loss: additive-only migration, `downgrade()` drops the two new columns.
+4. Test: seed tenant without `is_active`/`trial_ends_at`, confirm defaults apply; confirm existing queries unaffected.
+
+## Open items
+
+- [ ] billing: separate migration to rename `subscription_plan` → `plan` (tracked in billing ROADMAP, not blocking buchhaltung's migration)
+- [ ] Confirm `users` table field-name alignment (`hashed_password`/`full_name` vs `password_hash`/`display_name`) — parked, cosmetic, not urgent
