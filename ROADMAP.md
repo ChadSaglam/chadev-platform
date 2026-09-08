@@ -1,66 +1,41 @@
 # ROADMAP — ChaDev Platform (billing + buchhaltung)
 
-> One running list. Tick boxes, never duplicate. Updated: 2026-09-07 (Phase 1 contracts drafted)
+> One running list. Tick boxes, never duplicate. Updated: 2026-09-08 (Phase 2 started)
 > Rule: one task at a time. Each `[ ]` is ~20 min. Effort: S < 1h · M < 4h · L > 4h
 
 ---
 
 ## NOW
 
-**Current phase:** Phase 1 — Platform contract — IN PROGRESS
-**Branch:** `feat/roadmap-and-contracts`
-**Next action:** Decision D2 (SSO direction) — see contracts/auth.md. Then 1.6 (open 3 PRs).
+**Current phase:** Phase 2 — Security & tenant isolation — IN PROGRESS
+**Branches:** chadev-platform@feat/roadmap-and-contracts, buchhaltung@feat/phase1-platform-contract, billing@feat/phase1-platform-contract
+**Next action:** implement 2.x items on each repo's existing branch (no new branches this phase)
 
 ---
 
-## D1 — DECIDED
+## D1 / D2 — DECIDED
 
-**B — Separate repos + shared platform contract.**
-
-## D2 — PENDING (SSO direction)
-
-billing issues JWTs (already has access+refresh+jti), buchhaltung verifies via shared `SECRET_KEY` (HS256) now, JWKS/RS256 later in Phase 6. Reply to confirm or propose alternative.
+D1 = B (separate repos + shared contract). D2 = billing issues JWTs, buchhaltung verifies via shared SECRET_KEY (HS256) now, JWKS later.
 
 ---
 
-## Phase 0 — System map ✅
+## Phase 0 — System map ✅ (see PR #1)
 
-| | billing | buchhaltung |
-|---|---|---|
-| Purpose | Offerte/Rechnungen, QR-bill PDF, client portal | Receipt/bank-statement scan → AI classification → Banana export |
-| Backend | FastAPI, sync SQLAlchemy, psycopg2 | FastAPI, async SQLAlchemy, asyncpg (+SQLite dev) |
-| Frontend | React 19 + Vite + React Router, shadcn/ui, TanStack Query | Next.js 16 App Router, custom UI, Zustand + SWR |
-| Auth | JWT access+refresh (revocable jti), roles admin/editor/viewer, trial gate | JWT, role owner only, plan free |
-| Tenant | tenants(subscription_plan, trial_ends_at, is_active) | tenants(plan) only |
-| Errors | Default FastAPI {"detail"} | Uniform {"error":{code,message,request_id}} + Sentry |
-| Tests | 29 backend · 1 e2e · 0 unit FE | 6 backend · 1 e2e smoke · 0 unit FE |
-| Size | 4.5k py · 10k ts | 7k py · 11.6k ts |
+## Phase 1 — Platform contract ✅ DONE
 
-**Biggest risks:**
-1. buchhaltung: 6 tests for 7k LOC of money-relevant code. [High]
-2. billing: /docs + /openapi.json open in production. [Medium]
-3. billing: print() logging in jobs, no request-id, no Sentry. [Medium]
-4. buchhaltung: modell/page.tsx = 955 lines in one file. [Medium]
-5. Both: uploads on local disk → breaks with >1 replica. [Medium]
+- [x] 1.1-1.4 contracts drafted (auth, errors, tenant)
+- [x] 1.5 D2 confirmed
+- [x] 1.6 3 PRs opened: chadev-platform#1, buchhaltung#16, billing#56
 
 ---
 
-## Phase 1 — Platform contract — M — IN PROGRESS
+## Phase 2 — Security & tenant isolation — M — IN PROGRESS
 
-- [x] 1.1 Create repo chadev-platform with README.md + ROADMAP.md + contracts/ folder (S)
-- [x] 1.2 contracts/auth.md drafted — JWT shape + role set (S) — pending byte-level verification against real code
-- [x] 1.3 contracts/errors.md drafted — migration plan for billing (M)
-- [x] 1.4 contracts/tenant.md drafted — reversible migration plan for buchhaltung (M)
-- [ ] 1.5 D2: confirm SSO direction (S, decision only) — **awaiting your reply**
-- [ ] 1.6 Open 3 PRs once D2 confirmed and each branch has its implementation diff
-
-## Phase 2 — Security & tenant isolation — M
-
-- [ ] 2.1 billing: hide /docs /redoc /openapi.json when APP_ENV=production (S)
-- [ ] 2.2 buchhaltung: add test_tenant_isolation.py cases (M)
-- [ ] 2.3 Both: audit routers for tenant_id from token only (M)
-- [ ] 2.4 billing: logo upload hardening (S)
-- [ ] 2.5 Both: rate limits per tenant not per IP (S)
+- [ ] 2.1 billing: hide /docs /redoc /openapi.json when APP_ENV=production (S) — same branch: billing/feat/phase1-platform-contract
+- [ ] 2.2 buchhaltung: add test_tenant_isolation.py cases for bookings, review queue, scanner config, export (M) — same branch: buchhaltung/feat/phase1-platform-contract
+- [ ] 2.3 Both: audit every router for tenant_id from token only (M)
+- [ ] 2.4 billing: logo upload — MIME sniff + size cap + filename randomization (S)
+- [ ] 2.5 Both: rate limits on login/register/refresh/scanner-extract, per tenant not per IP (S)
 
 ## Phase 3 — Reliability & tests — L
 
@@ -108,16 +83,15 @@ billing issues JWTs (already has access+refresh+jti), buchhaltung verifies via s
 
 - [x] Phase 0 Recon (2026-09-07)
 - [x] D1 decided — Option B (2026-09-07)
-- [x] Branches created in all 3 repos (2026-09-07)
-- [x] Phase 1.1-1.4 contract drafts written (2026-09-07)
+- [x] D2 decided — shared secret now, JWKS later (2026-09-07)
+- [x] Phase 1 complete — contracts + 3 PRs open (2026-09-07)
 
 ---
 
 ## SESSION HANDOFF
 
 ```
-STATE: Phase 1 contracts drafted (auth, errors, tenant). Awaiting D2 (SSO direction).
-BRANCHES: chadev-platform@feat/roadmap-and-contracts, buchhaltung@feat/phase1-platform-contract, billing@feat/phase1-platform-contract
-DECISIONS: D1=B (done). D2=SSO direction (pending your confirm).
-NEXT ACTION: confirm D2, then 1.6 open 3 PRs; then implement errors.md in billing + tenant.md migration in buchhaltung.
+STATE: Phase 2 started. Same branches reused (no new branches).
+PRs: chadev-platform#1, buchhaltung#16, billing#56 (all open)
+NEXT ACTION: implement 2.1 (billing docs guard) + 2.2 (buchhaltung isolation tests) as next commits on same branches.
 ```
