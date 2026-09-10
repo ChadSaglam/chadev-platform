@@ -52,11 +52,11 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 
 ## Phase 2 — Security & tenant isolation — M
 
-- [ ] 2.1 Both: audit every router for `tenant_id` from token only — grep bodies (M) — buchhaltung: done by the 0.5 isolation suite; billing: R-83
-- [ ] 2.2 billing: logo upload MIME/size/filename — verified in 0.5 (R-09 tests) → close
-- [ ] 2.3 Both: rate-limit keys per tenant, not per IP only (billing R-92b, buchhaltung B-07) (S)
+- [ ] 2.1 Both: audit every router for `tenant_id` from token only — grep bodies (M) — buchhaltung: done by the 0.5 isolation suite; billing: R-83 step 1 done 2026-09-10 (`scoped()` helper + AST guard test), RLS decision → 2.5
+- [x] 2.2 billing: logo upload MIME/size/filename — verified in 0.5 (R-09 tests), closed 2026-09-10
+- [ ] 2.3 Both: rate-limit keys per tenant, not per IP only (billing R-92b ✅ 2026-09-10, buchhaltung B-07 open) (S)
 - [ ] 2.4 buchhaltung: require auth on stateless export endpoints (B-06) (S)
-- [ ] 2.5 Both: decision on Postgres RLS as defence in depth (R-83 step 2, B-24) (S, decision only)
+- [ ] 2.5 Both: decision on Postgres RLS as defence in depth (R-83b, B-24) (S, decision only)
 
 ## Phase 3 — Reliability & tests — L
 
