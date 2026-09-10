@@ -14,7 +14,7 @@ contracts/     the shared API contracts (auth/JWT, tenant, errors)   ← source 
 tokens/        design tokens (CSS variables) so both apps look like one brand
 ROADMAP.md     the ONE cross-product roadmap (phases 1–7)
 docs/          decisions (ADR-style, one file per decision)
-chadev-platform.code-workspace   VS Code workspace: platform + ../billing + ../buchhaltung in one window
+chadev-platform.code-workspace   VS Code workspace: the 3 repos in one window
 ```
 
 Open everything at once: `code chadev-platform.code-workspace` (expects the three repos side by side in `~/Documents/GitHub/`).
