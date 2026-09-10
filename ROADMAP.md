@@ -12,8 +12,8 @@
 **Decision D1 = B ✅** (2026-09-09): separate repos + shared platform contract.
 **Phase 0.5 ✅** — the 5 recon risks are fixed on branch `feat/phase0-risks` in both product repos.
 
-**Current phase: Phase 1 — Platform contract**
-**Next action:** 1.1 — merge the three `feat/phase0-risks` branches, then start 1.2.
+**Current phase: Phase 1 — Platform contract** (1.1 ✅ · 1.2 ✅)
+**Next action:** 1.3 — errors contract; decide when billing drops the legacy `detail` key.
 
 ---
 
@@ -42,8 +42,8 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 
 ## Phase 1 — Platform contract (makes "together" possible) — M
 
-- [ ] 1.1 Merge `feat/phase0-risks` in billing, buchhaltung, chadev-platform (PRs, CI green) (S)
-- [ ] 1.2 `contracts/auth.md` → finalize: JWT `{sub, tid, role, type, exp, jti}`, roles `owner|admin|editor|viewer` (S) — draft exists
+- [x] 1.1 Merged into `main` in all three repos (2026-09-10)
+- [x] 1.2 `contracts/auth.md` accepted (2026-09-10): buchhaltung issues `{sub,tid,role,type,jti}`, verifies `tid`/`type`, gains `require_role()`; billing adds `role`+`jti`. Legacy `tenant_id` accepted one more release.
 - [ ] 1.3 `contracts/errors.md` → finalize; billing drops the legacy `detail` key in a **major** API bump (frontend `main.tsx`, `TeamTab.tsx` read `detail` today) (M)
 - [ ] 1.4 `contracts/tenant.md` → buchhaltung Alembic migration adds `trial_ends_at`, `is_active`; renames `plan` → `subscription_plan` (reversible) — tracked as **B-26** (M)
 - [ ] 1.5 Decide SSO direction: billing issues tokens, buchhaltung verifies (shared `SECRET_KEY` now, JWKS later). Write `docs/ADR-001-sso.md` (S, decision only)
@@ -103,4 +103,4 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 
 ## DONE
 
-- Phase 0 recon (2026-09-07) · D1 = B (2026-09-09) · Phase 0.5 risk fixes (2026-09-09)
+- Phase 0 recon (2026-09-07) · D1 = B (2026-09-09) · Phase 0.5 risk fixes (2026-09-09) · Phase 1.1–1.2 (2026-09-10)
