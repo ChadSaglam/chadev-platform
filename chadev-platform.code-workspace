@@ -1,0 +1,175 @@
+{
+  "folders": [
+    { "name": "platform", "path": "./" },
+    { "name": "contracts", "path": "contracts" },
+    { "name": "tokens", "path": "tokens" },
+    { "name": "billing", "path": "../billing" },
+    { "name": "billing-backend", "path": "../billing/backend" },
+    { "name": "billing-frontend", "path": "../billing/frontend" },
+    { "name": "billing-migrations", "path": "../billing/backend/alembic/versions" },
+    { "name": "buchhaltung", "path": "../buchhaltung" },
+    { "name": "buchhaltung-backend", "path": "../buchhaltung/backend" },
+    { "name": "buchhaltung-frontend", "path": "../buchhaltung/frontend" },
+    { "name": "buchhaltung-migrations", "path": "../buchhaltung/backend/alembic/versions" }
+  ],
+  "settings": {
+    "terminal.integrated.defaultProfile.osx": "zsh",
+    "diffEditor.ignoreTrimWhitespace": false,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit",
+      "source.organizeImports.ruff": "explicit"
+    },
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/venv": true,
+      "**/.venv": true,
+      "**/__pycache__": true,
+      "**/.next": true,
+      "**/dist": true,
+      "**/.pytest_cache": true,
+      "**/.ruff_cache": true,
+      "**/Claude outputs": true
+    },
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/venv": true,
+      "**/package-lock.json": true,
+      "**/api.generated.ts": true,
+      "**/api-types.ts": true
+    },
+    "python.defaultInterpreterPath": "${workspaceFolder:buchhaltung-backend}/venv/bin/python",
+    "python.analysis.extraPaths": [
+      "${workspaceFolder:billing-backend}",
+      "${workspaceFolder:buchhaltung-backend}"
+    ],
+    "python.testing.pytestEnabled": true,
+    "ruff.configuration": "${workspaceFolder:buchhaltung}/pyproject.toml",
+    "mypy-type-checker.args": ["--config-file", "./pyproject.toml"],
+    "[python]": {
+      "editor.defaultFormatter": "charliermarsh.ruff"
+    },
+    "[json]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[jsonc]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[typescriptreact]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[javascript]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[css]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[yaml]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode"
+    },
+    "[markdown]": {
+      "editor.defaultFormatter": "esbenp.prettier-vscode",
+      "editor.unicodeHighlight.ambiguousCharacters": false,
+      "editor.unicodeHighlight.invisibleCharacters": false,
+      "diffEditor.ignoreTrimWhitespace": false,
+      "editor.wordWrap": "on",
+      "editor.quickSuggestions": {
+        "comments": "off",
+        "strings": "off",
+        "other": "off"
+      }
+    },
+    "[sql]": {
+      "editor.formatOnSave": false
+    },
+    "[dockerfile]": {
+      "editor.formatOnSave": false
+    },
+    "task.reconnection": false,
+    "task.autoDetect": "off",
+    "makefile.configureOnOpen": false,
+    "git.ignoreLimitWarning": true,
+    "git.autofetch": true,
+    "github-actions.workflows.pinned.workflows": [
+      ".github/workflows/platform-status.yml",
+      "../billing/.github/workflows/ci.yml",
+      "../billing/.github/workflows/security.yml",
+      "../buchhaltung/.github/workflows/ci.yml"
+    ]
+  },
+  "extensions": {
+    "recommendations": [
+      "charliermarsh.ruff",
+      "ms-python.python",
+      "ms-python.mypy-type-checker",
+      "esbenp.prettier-vscode",
+      "dbaeumer.vscode-eslint",
+      "bradlc.vscode-tailwindcss",
+      "github.vscode-github-actions",
+      "exiasr.hadolint",
+      "ms-azuretools.vscode-docker",
+      "ms-playwright.playwright"
+    ]
+  },
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "billing · backend tests",
+        "type": "shell",
+        "command": "python -m pytest -q",
+        "options": { "cwd": "${workspaceFolder:billing-backend}" },
+        "group": "test"
+      },
+      {
+        "label": "billing · frontend check",
+        "type": "shell",
+        "command": "npx tsc --noEmit -p . && npm run lint && npm run build",
+        "options": { "cwd": "${workspaceFolder:billing-frontend}" },
+        "group": "test"
+      },
+      {
+        "label": "billing · e2e",
+        "type": "shell",
+        "command": "npx playwright test",
+        "options": { "cwd": "${workspaceFolder:billing-frontend}" }
+      },
+      {
+        "label": "billing · dev",
+        "type": "shell",
+        "command": "./scripts/dev.sh",
+        "options": { "cwd": "${workspaceFolder:billing}" },
+        "isBackground": true
+      },
+      {
+        "label": "buchhaltung · make check",
+        "type": "shell",
+        "command": "make check",
+        "options": { "cwd": "${workspaceFolder:buchhaltung}" },
+        "group": { "kind": "test", "isDefault": true }
+      },
+      {
+        "label": "buchhaltung · api-types",
+        "type": "shell",
+        "command": "make api-types",
+        "options": { "cwd": "${workspaceFolder:buchhaltung}" }
+      },
+      {
+        "label": "buchhaltung · dev",
+        "type": "shell",
+        "command": "make dev",
+        "options": { "cwd": "${workspaceFolder:buchhaltung}" },
+        "isBackground": true
+      },
+      {
+        "label": "platform · status report (local)",
+        "type": "shell",
+        "command": "scripts/status.sh billing ../billing R && scripts/status.sh buchhaltung ../buchhaltung B",
+        "options": { "cwd": "${workspaceFolder:platform}" }
+      }
+    ]
+  }
+}
