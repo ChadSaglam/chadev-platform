@@ -14,8 +14,9 @@
 
 **Phase 1 ✅ complete (2026-09-10)** — contracts accepted (auth, errors, tenant), ADR-001 SSO decided, tokens imported by both apps.
 **Phase 2 ✅ complete (2026-09-10)** — per-tenant rate limits, scoped-query helper + guard test, export auth, RLS deferred (ADR-002), security workflow in both repos.
-**Current phase: Phase 3 — Reliability & tests**
-**Next action:** 3.1 billing QR/VAT matrix (R-49, R-51) + 3.2 buchhaltung rounding/preprocess (B-05, B-04).
+**Phase 3 ✅ complete (2026-09-10)** — money-math bugs fixed in both products, Vitest + Playwright happy paths in CI, buchhaltung pickle RCE closed.
+**Current phase: Phase 4 — Professional polish**
+**Next action:** 4.1 worker services (R-84, B-08) + 4.3 `/api/health` (R-75, B-13).
 
 ---
 
@@ -28,7 +29,7 @@
 | Auth | JWT access+refresh (jti), roles admin/editor/viewer, trial gate | JWT, role owner only, plan free |
 | Tenant | `subscription_plan, trial_ends_at, is_active` | same + `slug` since 1.4 |
 | Errors | `{"detail"}` **+ `{"error":{code,message,request_id}}` since 0.5** | `{"error":{code,message,request_id}}` + Sentry |
-| Tests | 58 backend · 1 e2e | 233 backend · 1 e2e |
+| Tests | 112 backend · 21 unit · 1 e2e | 280 backend · 58 unit · 3 e2e |
 
 Shared today: **the error envelope and the storage interface** (both added in 0.5). Still separate: tenants, users, login, design.
 
@@ -61,10 +62,10 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 
 ## Phase 3 — Reliability & tests — L
 
-- [ ] 3.1 billing: QR-reference checksum + VAT/rounding matrix (R-49, R-51) (M)
-- [ ] 3.2 buchhaltung: `calc_mwst` half-up alignment (B-05), `preprocess` word boundaries + memory-key migration (B-04) (M)
-- [ ] 3.3 Both: Vitest for 3 critical FE utils (R-21, B-11) (M)
-- [ ] 3.4 Both: Playwright happy path per product (R-22, B-? → add) (M)
+- [x] 3.1 billing: R-51 (ISO 11649 cap bug fixed, MOD10/QRR helpers), R-49 matrix (half-even vs half-up → R-98, quantity precision → R-99), R-66/R-69/R-70/R-72 money bugs fixed. Tests 58 → 112
+- [x] 3.2 buchhaltung: B-05 half-up everywhere, B-04 `` month tokens + memory-key data migration `4c7e2a91b0d3`; B-32 bandit blocking; **pickle upload RCE fixed** (HMAC-signed model blobs — existing models must be retrained once). Tests 233 → 280
+- [x] 3.3 Vitest in both: billing 21 tests (errors, line-item-utils, optimistic), buchhaltung 58 tests; both in CI
+- [x] 3.4 Playwright happy path in CI: billing register → client → invoice → PDF (R-22); buchhaltung register → booking → export (B-33)
 
 ## Phase 4 — Professional polish — M
 
@@ -104,4 +105,4 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 
 ## DONE
 
-- Phase 0 recon (2026-09-07) · D1 = B (2026-09-09) · Phase 0.5 risk fixes (2026-09-09) · Phase 1 + Phase 2 complete (2026-09-10)
+- Phase 0 recon (2026-09-07) · D1 = B (2026-09-09) · Phase 0.5 risk fixes (2026-09-09) · Phases 1–3 complete (2026-09-10)
