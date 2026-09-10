@@ -13,8 +13,9 @@
 **Phase 0.5 ✅** — the 5 recon risks are fixed on branch `feat/phase0-risks` in both product repos.
 
 **Phase 1 ✅ complete (2026-09-10)** — contracts accepted (auth, errors, tenant), ADR-001 SSO decided, tokens imported by both apps.
-**Current phase: Phase 2 — Security & tenant isolation**
-**Next action:** 2.3 — rate-limit keys per tenant (billing R-92b, buchhaltung B-07).
+**Phase 2 ✅ complete (2026-09-10)** — per-tenant rate limits, scoped-query helper + guard test, export auth, RLS deferred (ADR-002), security workflow in both repos.
+**Current phase: Phase 3 — Reliability & tests**
+**Next action:** 3.1 billing QR/VAT matrix (R-49, R-51) + 3.2 buchhaltung rounding/preprocess (B-05, B-04).
 
 ---
 
@@ -27,7 +28,7 @@
 | Auth | JWT access+refresh (jti), roles admin/editor/viewer, trial gate | JWT, role owner only, plan free |
 | Tenant | `subscription_plan, trial_ends_at, is_active` | same + `slug` since 1.4 |
 | Errors | `{"detail"}` **+ `{"error":{code,message,request_id}}` since 0.5** | `{"error":{code,message,request_id}}` + Sentry |
-| Tests | 51 backend · 1 e2e | 216 backend · 1 e2e |
+| Tests | 58 backend · 1 e2e | 233 backend · 1 e2e |
 
 Shared today: **the error envelope and the storage interface** (both added in 0.5). Still separate: tenants, users, login, design.
 
@@ -52,11 +53,11 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 
 ## Phase 2 — Security & tenant isolation — M
 
-- [ ] 2.1 Both: audit every router for `tenant_id` from token only — grep bodies (M) — buchhaltung: done by the 0.5 isolation suite; billing: R-83 step 1 done 2026-09-10 (`scoped()` helper + AST guard test), RLS decision → 2.5
+- [x] 2.1 buchhaltung: isolation suite (0.5) · billing: `services/tenancy.py` scoped queries + static guard test (R-48, R-83 step 1)
 - [x] 2.2 billing: logo upload MIME/size/filename — verified in 0.5 (R-09 tests), closed 2026-09-10
-- [ ] 2.3 Both: rate-limit keys per tenant, not per IP only (billing R-92b ✅ 2026-09-10, buchhaltung B-07 open) (S)
-- [ ] 2.4 buchhaltung: require auth on stateless export endpoints (B-06) (S)
-- [ ] 2.5 Both: decision on Postgres RLS as defence in depth (R-83b, B-24) (S, decision only)
+- [x] 2.3 rate-limit keys per tenant: billing R-92b (`tenant:<tid>` on document/pdf/email/bulk/upload routes), buchhaltung B-07 (heavy/classify limits; found + fixed a silently inactive default limit)
+- [x] 2.4 buchhaltung export endpoints require auth (B-06)
+- [x] 2.5 `docs/ADR-002-rls.md`: RLS deferred until first external tenant or 6.5; guard test + isolation suites are the contract (R-83b, B-24 stay parked)
 
 ## Phase 3 — Reliability & tests — L
 
@@ -91,7 +92,7 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 
 - [ ] 7.1 billing: Makefile mirroring buchhaltung (S)
 - [ ] 7.2 billing: AGENTS.md adapted from buchhaltung (S)
-- [ ] 7.3 buchhaltung: `security.yml` from billing (B-12) (S)
+- [x] 7.3 buchhaltung: `security.yml` + `.gitleaks.toml` (B-12)
 - [ ] 7.4 Both: pre-commit — ruff, prettier, api-types freshness (R-63, B-29) (S)
 - [ ] 7.5 Both: `STATUS.md` auto-generated (B-30) (S)
 
@@ -103,4 +104,4 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 
 ## DONE
 
-- Phase 0 recon (2026-09-07) · D1 = B (2026-09-09) · Phase 0.5 risk fixes (2026-09-09) · Phase 1 complete (2026-09-10)
+- Phase 0 recon (2026-09-07) · D1 = B (2026-09-09) · Phase 0.5 risk fixes (2026-09-09) · Phase 1 + Phase 2 complete (2026-09-10)
