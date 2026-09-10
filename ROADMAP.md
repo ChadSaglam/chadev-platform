@@ -3,7 +3,7 @@
 > One running list for everything that touches **both** products. Tick boxes, never duplicate.
 > Product-only work lives in `billing/ROADMAP.md` (R-xx) and `buchhaltung/ROADMAP.md` (B-xx).
 > Rule: one task at a time. Each `[ ]` ≈ 20 min. Effort: S < 1h · M < 4h · L > 4h
-> Updated: 2026-09-09
+> Updated: 2026-09-10
 
 ---
 
@@ -12,8 +12,9 @@
 **Decision D1 = B ✅** (2026-09-09): separate repos + shared platform contract.
 **Phase 0.5 ✅** — the 5 recon risks are fixed on branch `feat/phase0-risks` in both product repos.
 
-**Current phase: Phase 1 — Platform contract** (1.1 ✅ · 1.2 ✅)
-**Next action:** 1.3 — errors contract; decide when billing drops the legacy `detail` key.
+**Phase 1 ✅ complete (2026-09-10)** — contracts accepted (auth, errors, tenant), ADR-001 SSO decided, tokens imported by both apps.
+**Current phase: Phase 2 — Security & tenant isolation**
+**Next action:** 2.3 — rate-limit keys per tenant (billing R-92b, buchhaltung B-07).
 
 ---
 
@@ -24,9 +25,9 @@
 | Backend | FastAPI, sync SQLAlchemy, psycopg2 | FastAPI, async SQLAlchemy, asyncpg (+SQLite dev) |
 | Frontend | React 19 + Vite, shadcn/ui, TanStack Query | Next.js 16 App Router, custom UI, Zustand + SWR |
 | Auth | JWT access+refresh (jti), roles admin/editor/viewer, trial gate | JWT, role owner only, plan free |
-| Tenant | `subscription_plan, trial_ends_at, is_active` | `plan` only |
+| Tenant | `subscription_plan, trial_ends_at, is_active` | same + `slug` since 1.4 |
 | Errors | `{"detail"}` **+ `{"error":{code,message,request_id}}` since 0.5** | `{"error":{code,message,request_id}}` + Sentry |
-| Tests | 48 backend · 1 e2e | 193 backend · 1 e2e |
+| Tests | 51 backend · 1 e2e | 216 backend · 1 e2e |
 
 Shared today: **the error envelope and the storage interface** (both added in 0.5). Still separate: tenants, users, login, design.
 
@@ -44,16 +45,16 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 
 - [x] 1.1 Merged into `main` in all three repos (2026-09-10)
 - [x] 1.2 `contracts/auth.md` accepted (2026-09-10): buchhaltung issues `{sub,tid,role,type,jti}`, verifies `tid`/`type`, gains `require_role()`; billing adds `role`+`jti`. Legacy `tenant_id` accepted one more release.
-- [ ] 1.3 `contracts/errors.md` → finalize; billing drops the legacy `detail` key in a **major** API bump (frontend `main.tsx`, `TeamTab.tsx` read `detail` today) (M)
-- [ ] 1.4 `contracts/tenant.md` → buchhaltung Alembic migration adds `trial_ends_at`, `is_active`; renames `plan` → `subscription_plan` (reversible) — tracked as **B-26** (M)
-- [ ] 1.5 Decide SSO direction: billing issues tokens, buchhaltung verifies (shared `SECRET_KEY` now, JWKS later). Write `docs/ADR-001-sso.md` (S, decision only)
-- [ ] 1.6 `tokens/tokens.css` — first shared design tokens (colour, radius, spacing) consumed by both apps (S)
+- [x] 1.3 `contracts/errors.md` accepted: billing frontend reads `error.message` via `lib/errors.ts` (R-94), 429 in the envelope with `Retry-After` (R-92), 500 hides exception text (R-95). Legacy `detail` removed in billing 2.6.0 (R-96).
+- [x] 1.4 `contracts/tenant.md` implemented in buchhaltung (B-26, migration `921d958b8530`, reversible): `subscription_plan`, `trial_ends_at`, `is_active`, `slug`; inactive tenant → 403. Docker entrypoint now runs Alembic (stamps legacy `create_all` volumes first).
+- [x] 1.5 `docs/ADR-001-sso.md` accepted: billing = issuer, buchhaltung verifies (shared secret now → JWKS before first external tenant), tenants mirrored from token in 6.5, users never mirrored.
+- [x] 1.6 `tokens/tokens.css` imported first in both global stylesheets; only format-identical vars mapped (radius/fonts). Colour mapping → 5.3.
 
 ## Phase 2 — Security & tenant isolation — M
 
 - [ ] 2.1 Both: audit every router for `tenant_id` from token only — grep bodies (M) — buchhaltung: done by the 0.5 isolation suite; billing: R-83
 - [ ] 2.2 billing: logo upload MIME/size/filename — verified in 0.5 (R-09 tests) → close
-- [ ] 2.3 Both: rate-limit keys per tenant, not per IP only (billing R-92, buchhaltung B-07) (S)
+- [ ] 2.3 Both: rate-limit keys per tenant, not per IP only (billing R-92b, buchhaltung B-07) (S)
 - [ ] 2.4 buchhaltung: require auth on stateless export endpoints (B-06) (S)
 - [ ] 2.5 Both: decision on Postgres RLS as defence in depth (R-83 step 2, B-24) (S, decision only)
 
@@ -69,13 +70,12 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 - [ ] 4.1 Both: background jobs → separate worker compose service (R-84, B-08) (M)
 - [ ] 4.2 buchhaltung: persist receipts through `StorageBackend` (B-09) (M)
 - [ ] 4.3 Both: `/api/health` → version, db, migration_head, storage (R-75, B-13) (S)
-- [ ] 4.4 billing: 429 into the error envelope (R-92) (S)
 
 ## Phase 5 — Dynamic & user-friendly UX — L
 
 - [ ] 5.1 billing: i18n DE/EN reusing buchhaltung `lib/i18n.ts` pattern (R-25) (M)
 - [ ] 5.2 buchhaltung: `settings/page.tsx`, `insights/page.tsx` ≤200 lines (B-10) (M)
-- [ ] 5.3 Both consume `tokens/tokens.css` — one brand (M)
+- [ ] 5.3 Map colours to tokens (shadcn HSL ↔ hex) and decide the brand colour — both apps look like one product (M)
 - [ ] 5.4 Both: loading / empty / error states audit (R-24, B-18) (M)
 - [ ] 5.5 Both: a11y pass (R-23, B-19) (M)
 
@@ -103,4 +103,4 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 
 ## DONE
 
-- Phase 0 recon (2026-09-07) · D1 = B (2026-09-09) · Phase 0.5 risk fixes (2026-09-09) · Phase 1.1–1.2 (2026-09-10)
+- Phase 0 recon (2026-09-07) · D1 = B (2026-09-09) · Phase 0.5 risk fixes (2026-09-09) · Phase 1 complete (2026-09-10)

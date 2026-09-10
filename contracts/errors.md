@@ -1,18 +1,23 @@
-# Contract: Error envelope — DRAFT (Phase 1.3)
+# Contract: Error envelope
 
-Status: **draft** · Source pattern: buchhaltung `core/errors.py` (copied into billing in Phase 0.5)
+Status: **accepted 2026-09-10** (Phase 1.3) · Implemented in: buchhaltung `core/errors.py`, billing `core/errors.py` + `limiter.py`
 
-Every non-2xx response:
+Every non-2xx response from any ChaDev product:
 
 ```json
 { "error": { "code": "http_404", "message": "Not found", "request_id": "a1b2c3d4e5f6a7b8" } }
 ```
 
-- `code`: `http_<status>` · `validation_error` (+ `fields: [{field, message}]`) · `rate_limited` · `internal_error`
-- `request_id`: also sent as `X-Request-ID` response header; clients may send their own.
-- `Server-Timing: app;dur=<ms>` on every response.
+| Field | Rule |
+|---|---|
+| `code` | `http_<status>` for plain HTTP errors · `validation_error` (adds `fields: [{field, message}]`) · `rate_limited` (adds `retry_after` seconds; `Retry-After` header set) · `internal_error` (never leaks the exception text) |
+| `message` | human-readable, safe to show in the UI |
+| `request_id` | also sent as `X-Request-ID`; clients may send their own and it is echoed |
 
-## Transition
-billing currently returns **both** `detail` (legacy) and `error`. Dropping `detail` is a **breaking** change → planned for billing major bump after `frontend/src/main.tsx` and `TeamTab.tsx` read `error.message`.
+Every response also carries `Server-Timing: app;dur=<ms>`.
 
-Open: billing 429 (slowapi) is still `{"error": "<string>"}` → R-92.
+## Client rule
+Read `error.message` first. billing's frontend does this through `lib/errors.ts` (`getApiErrorMessage`, `getRequestId`), buchhaltung through `lib/errors.ts`. Show `(Ref: <request_id>)` on 5xx so support can find the log line.
+
+## Transition (billing only)
+billing still emits the legacy top-level `detail` (string, or FastAPI's list on 422) **next to** `error`. No first-party client reads it any more (R-94). It is removed in the next **minor** release of billing (`2.6.0`) — tracked as R-96. Third-party integrations, if any, must switch to `error.message` before that.
