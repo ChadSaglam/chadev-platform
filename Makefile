@@ -1,17 +1,24 @@
 # ChaDev platform — run both products together or on their own.
 # Each product keeps its own tooling; this file only fans out to it.
-#   billing      → http://localhost:9200  (API 9201, Postgres 9202)
-#   buchhaltung  → http://localhost:3000  (API 8000, Postgres 5432, Redis 6379, Ollama 11434)
-# The port ranges do not overlap, so "together" is simply "both at once".
+#   buchhaltung  → http://localhost:3000  (API 8000, Postgres 5432, Redis 6379, Ollama 11434; e2e 3100/8100)
+#   billing      → http://localhost:5000  (API 9000, Postgres 9432; e2e 5100/9100)
+# Port families never overlap, so "together" is simply "both at once".
 .DEFAULT_GOAL := help
 SHELL := /bin/bash
 BILLING     := ../billing
 BUCHHALTUNG := ../buchhaltung
 
-.PHONY: help dev dev-billing dev-buchhaltung stop up up-billing up-buchhaltung down logs check check-billing check-buchhaltung status pull
+.PHONY: help setup dev dev-billing dev-buchhaltung stop up up-billing up-buchhaltung down logs check check-billing check-buchhaltung status pull
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
+
+# ── One-time setup ─────────────────────────────────────────────────
+setup: ## Install/refresh dependencies of both products (venv + npm + Playwright)
+	cd $(BILLING) && ./scripts/setup.sh
+	cd $(BILLING)/backend && venv/bin/pip install -q -r requirements-dev.txt
+	cd $(BILLING)/frontend && npm install && npx playwright install chromium
+	cd $(BUCHHALTUNG) && make setup
 
 # ── Local (venv + npm, hot reload) ─────────────────────────────────
 dev: ## Both products locally, one terminal (Ctrl-C stops both)
@@ -27,7 +34,7 @@ dev-buchhaltung: ## buchhaltung only (local)
 	cd $(BUCHHALTUNG) && make dev
 
 stop: ## Free every dev port of both products
-	@for p in 9200 9201 3000 8000 3100 8100; do pid=$$(lsof -ti tcp:$$p 2>/dev/null); [ -n "$$pid" ] && { echo "  killing :$$p (PID $$pid)"; kill $$pid; } || true; done
+	@for p in 3000 8000 3100 8100 5000 9000 5100 9100; do pid=$$(lsof -ti tcp:$$p 2>/dev/null); [ -n "$$pid" ] && { echo "  killing :$$p (PID $$pid)"; kill $$pid; } || true; done
 
 # ── Docker (production-like, migrations run on start) ──────────────
 up: up-billing up-buchhaltung ## Both products in Docker

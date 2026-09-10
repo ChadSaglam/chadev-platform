@@ -23,15 +23,23 @@ Open everything at once: `code chadev-platform.code-workspace` (expects the thre
 
 | I want… | Command (from this folder) | Opens |
 |---|---|---|
-| both products, local, hot reload | `make dev` | billing http://localhost:9200 · buchhaltung http://localhost:3000 |
+| first time / after a pull with new deps | `make setup` | installs venv + npm deps of both |
+| both products, local, hot reload | `make dev` | buchhaltung http://localhost:3000 · billing http://localhost:5000 |
 | one product, local | `make dev-billing` / `make dev-buchhaltung` | same URLs |
 | both products in Docker | `make up` (`make down`, `make logs`) | same URLs; migrations run on start |
 | one product in Docker | `make up-billing` / `make up-buchhaltung` | |
 | every quality gate | `make check` | ruff · pytest · tsc · lint · vitest · build · e2e |
 | what's going on | `make status` | test counts, sizes, NOW items of both |
 
-Ports never overlap (billing 9200–9202, buchhaltung 3000/8000/5432/6379/11434), so "together" is just both at once.
-Prerequisites: each product set up once on its own (`billing/scripts/setup.sh`, `buchhaltung: make setup`), Docker Desktop for the `up` targets.
+Port families never overlap, so "together" is just both at once:
+
+| | frontend | API | Postgres | e2e (frontend / API) |
+|---|---|---|---|---|
+| buchhaltung | 3000 | 8000 | 5432 (+ Redis 6379, Ollama 11434) | 3100 / 8100 |
+| billing | 5000 | 9000 | 9432 | 5100 / 9100 |
+
+If a port is taken by something else (`make stop` shows what it kills), that is another project on your machine — not one of these two.
+Docker Desktop is needed for the `up` targets.
 
 ## Rules
 
