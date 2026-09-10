@@ -1,7 +1,8 @@
 # ChaDev platform — run both products together or on their own.
 # Each product keeps its own tooling; this file only fans out to it.
 #   buchhaltung  → http://localhost:3000  (API 8000, Postgres 5432, Redis 6379, Ollama 11434; e2e 3100/8100)
-#   billing      → http://localhost:5000  (API 9000, Postgres 9432; e2e 5100/9100)
+#   billing      → http://localhost:5050  (API 9000, Postgres 9432; e2e 5150/9100)
+#   (5000/7000 are taken by macOS AirPlay Receiver — never use them)
 # Port families never overlap, so "together" is simply "both at once".
 .DEFAULT_GOAL := help
 SHELL := /bin/bash
@@ -34,7 +35,7 @@ dev-buchhaltung: ## buchhaltung only (local)
 	cd $(BUCHHALTUNG) && make dev
 
 stop: ## Free every dev port of both products
-	@for p in 3000 8000 3100 8100 5000 9000 5100 9100; do pid=$$(lsof -ti tcp:$$p 2>/dev/null); [ -n "$$pid" ] && { echo "  killing :$$p (PID $$pid)"; kill $$pid; } || true; done
+	@for p in 3000 8000 3100 8100 5050 9000 5150 9100; do pid=$$(lsof -ti tcp:$$p 2>/dev/null); [ -n "$$pid" ] && { echo "  killing :$$p (PID $$pid)"; kill $$pid; } || true; done
 
 # ── Docker (production-like, migrations run on start) ──────────────
 up: up-billing up-buchhaltung ## Both products in Docker
@@ -58,7 +59,8 @@ logs: ## Tail both Docker stacks
 # ── Quality gates ──────────────────────────────────────────────────
 check: check-billing check-buchhaltung ## Every gate of both products
 
-check-billing: ## billing: ruff · pytest · tsc · lint · vitest · build
+check-billing: ## billing: ruff · pytest (starts the Docker db) · tsc · lint · vitest · build
+	cd $(BILLING) && docker compose up -d db >/dev/null && sleep 3
 	cd $(BILLING)/backend && venv/bin/python -m ruff check app tests && venv/bin/python -m pytest -q
 	cd $(BILLING)/frontend && npx tsc --noEmit -p . && npm run lint && npm run test -- --run && npm run build
 
