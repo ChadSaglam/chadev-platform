@@ -1,0 +1,101 @@
+name: Platform status
+
+# One place to see both products in detail: clones billing + buchhaltung,
+# runs their backend test suites, and writes STATUS.md (committed) plus the
+# same report into the job summary. Public repos → no token needed.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 5 * * 1-5" # weekdays 07:00 Zürich (UTC+2)
+  push:
+    branches: [main]
+    paths: [".github/workflows/platform-status.yml", "scripts/**"]
+
+permissions:
+  contents: write
+
+jobs:
+  billing:
+    name: billing · tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_USER: ci, POSTGRES_PASSWORD: ci, POSTGRES_DB: billing_test }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U ci" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/billing_test
+      TEST_DATABASE_URL: postgresql://ci:ci@localhost:5432/billing_test
+      SECRET_KEY: ci-only-secret
+      ALLOWED_ORIGINS: http://localhost:5173
+    steps:
+      - uses: actions/checkout@v4
+        with: { repository: ChadSaglam/billing, ref: main, path: billing }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.13" }
+      - run: pip install -q -r billing/backend/requirements.txt -r billing/backend/requirements-dev.txt
+      - run: cd billing/backend && (python -m pytest -q -p no:cacheprovider 2>&1 | tail -1 | tee ../../billing-tests.txt || true)
+      - uses: actions/upload-artifact@v4
+        with: { name: billing-tests, path: billing-tests.txt }
+
+  buchhaltung:
+    name: buchhaltung · tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env: { POSTGRES_USER: test, POSTGRES_PASSWORD: test, POSTGRES_DB: buchhaltung_test }
+        ports: ["5432:5432"]
+        options: --health-cmd "pg_isready -U test" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      ENV: test
+      DATABASE_URL: postgresql+asyncpg://test:test@127.0.0.1:5432/buchhaltung_test
+      DATABASE_URL_SYNC: postgresql://test:test@127.0.0.1:5432/buchhaltung_test
+      SECRET_KEY: ci-only-secret
+    steps:
+      - uses: actions/checkout@v4
+        with: { repository: ChadSaglam/buchhaltung, ref: main, path: buchhaltung }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.13" }
+      - run: pip install -q -r buchhaltung/backend/requirements.txt -r buchhaltung/backend/requirements-dev.txt
+      - run: cd buchhaltung/backend && (python -m pytest -q -p no:cacheprovider 2>&1 | tail -1 | tee ../../buchhaltung-tests.txt || true)
+      - uses: actions/upload-artifact@v4
+        with: { name: buchhaltung-tests, path: buchhaltung-tests.txt }
+
+  report:
+    name: STATUS.md
+    needs: [billing, buchhaltung]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: { repository: ChadSaglam/billing, ref: main, path: _billing }
+      - uses: actions/checkout@v4
+        with: { repository: ChadSaglam/buchhaltung, ref: main, path: _buchhaltung }
+      - uses: actions/download-artifact@v4
+        with: { path: _results }
+        continue-on-error: true
+      - name: Build STATUS.md
+        run: |
+          {
+            echo "# Platform status"
+            echo
+            echo "_Generated $(date -u +'%Y-%m-%d %H:%M UTC') by \`platform-status.yml\`. Do not edit by hand._"
+            echo
+            platform_open=$(grep -c '^- \[ \]' ROADMAP.md || true)
+            platform_done=$(grep -c '^- \[x\]' ROADMAP.md || true)
+            echo "**Platform roadmap:** $platform_open open · $platform_done done — [ROADMAP.md](ROADMAP.md)"
+            echo
+            scripts/status.sh "billing" _billing R _results/billing-tests/billing-tests.txt
+            scripts/status.sh "buchhaltung" _buchhaltung B _results/buchhaltung-tests/buchhaltung-tests.txt
+          } > STATUS.md
+          cat STATUS.md >> "$GITHUB_STEP_SUMMARY"
+      - name: Commit STATUS.md
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add STATUS.md
+          git diff --cached --quiet || git commit -m "chore: refresh STATUS.md [skip ci]"
+          git push

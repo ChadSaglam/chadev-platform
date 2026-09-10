@@ -24,4 +24,5 @@ docs/          decisions (ADR-style, one file per decision)
 
 ## Status
 
-See [ROADMAP.md](ROADMAP.md) → **NOW**.
+- [STATUS.md](STATUS.md) — auto-generated every weekday morning (and on demand via *Actions → Platform status → Run workflow*): test results, size, roadmap counts, NOW items and largest files of **both** products.
+- [ROADMAP.md](ROADMAP.md) → **NOW** for the next cross-product step.
