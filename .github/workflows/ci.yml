@@ -133,6 +133,15 @@ jobs:
           grep -rq '"request_id"' billing/backend/app/core/errors.py
           grep -rq '"request_id"' buchhaltung/backend/app/core/errors.py
 
+      - name: Both products carry the Phase 7 developer-experience files
+        run: |
+          for r in billing buchhaltung; do
+            for f in Makefile AGENTS.md .pre-commit-config.yaml STATUS.md scripts/status.sh; do
+              test -e "$r/$f" || { echo "missing $r/$f"; exit 1; }
+            done
+            grep -q '^status:.*##' "$r/Makefile" || { echo "$r/Makefile has no status target"; exit 1; }
+          done
+
       - name: Port families do not overlap
         run: |
           python3 - <<'PY'

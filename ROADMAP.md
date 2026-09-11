@@ -18,8 +18,10 @@
 **Phase 4 ✅ complete (2026-09-10)** — worker services in both compose files, receipts persisted through `StorageBackend`, rich `/api/health`, buchhaltung page splits, billing bulk-email 422 bug found + fixed.
 **Phase 5 ✅ complete (2026-09-11)** — billing speaks DE/EN, both apps on the brand blue `#2451e6`, every page has loading/empty/error states, axe gates in both Playwright suites (found: billing dialogs never returned focus; buchhaltung `dark:` utilities never applied).
 **Phase 6 (core) ✅ 2026-09-11** — one login: billing mints a 120 s SSO token, buchhaltung verifies it, mirrors the tenant and provisions a shadow user; app switcher in both top bars; a paid invoice becomes a `1020/1100` booking through signed, durable events. `make link` + `make smoke` prove it end to end.
-**Current phase: Phase 6 — remaining: 6.3 supplier-invoice suggestions (L), 6.4 payments decision**
-**Next action:** 6.4 decide Stripe vs Lemon Squeezy (needs Chad), then Phase 7 developer experience.
+**6.4 ✅ 2026-09-11** — payments = Stripe, integrated in billing only (`docs/ADR-003-payments.md`); implementation tracked as billing R-106. 6.3 stays parked (L).
+**Phase 7 ✅ 2026-09-11** — billing has `Makefile` + `AGENTS.md` like buchhaltung; pre-commit in both (ruff, gitleaks, eslint/tsc at pre-push, buchhaltung api-types freshness); `make status` writes `STATUS.md` in both. Found: billing CI's `tsc --noEmit` checked nothing (root tsconfig has `files: []`) → `tsc -b`.
+**Current phase: all planned phases complete — maintenance**
+**Next action:** billing R-106 Stripe (ADR-003) when Chad wants payments; parked: 6.3 (L), R-105/B-38 reversal, RLS (ADR-002).
 
 ---
 
@@ -89,16 +91,16 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 - [x] 6.1 SSO: `contracts/sso.md` — billing `GET /api/sso/launch` → `<buchhaltung>/sso#token=…` → `POST /api/auth/sso` (single-use jti, 120 s, `PLATFORM_SHARED_SECRET`); Apps switcher both sides (R-103, B-36). ADR-001 amended: dedicated secret, shadow users.
 - [x] 6.2 `contracts/events.md` — billing `outbound_events` table + jobs delivery with backoff, HMAC `X-Platform-Signature`; buchhaltung `POST /api/platform/events` → idempotent booking on `source_key` (R-104, B-37). Reversal `invoice.unpaid` parked (R-105, B-38).
 - [ ] 6.3 buchhaltung scanned supplier invoice → suggest client/service in billing (L)
-- [ ] 6.4 Shared plan/billing: Stripe vs Lemon Squeezy (decision) (L)
+- [x] 6.4 Payments decision: **Stripe** (`docs/ADR-003-payments.md`) — billing sells the plan, SSO mirrors it; implementation → billing R-106
 - [x] 6.5 Tenant mirrored on first SSO (`tenants.platform_tenant_id`, name/plan/trial refreshed on every hop, Kontenplan seeded). Module toggles not needed yet — both products are on for every mirrored tenant.
 
 ## Phase 7 — Developer experience — S
 
-- [ ] 7.1 billing: Makefile mirroring buchhaltung (S)
-- [ ] 7.2 billing: AGENTS.md adapted from buchhaltung (S)
+- [x] 7.1 billing: `Makefile` with the same targets as buchhaltung (`make help` lists them); `typecheck` now really checks (`tsc -b`)
+- [x] 7.2 billing: `AGENTS.md` + `CLAUDE.md` pointer, every path verified against the tree
 - [x] 7.3 buchhaltung: `security.yml` + `.gitleaks.toml` (B-12)
-- [ ] 7.4 Both: pre-commit — ruff, prettier, api-types freshness (R-63, B-29) (S)
-- [ ] 7.5 Both: `STATUS.md` auto-generated (B-30) (S)
+- [x] 7.4 Both: `.pre-commit-config.yaml` — pre-commit-hooks, ruff, gitleaks, eslint + tsc at pre-push; buchhaltung adds the api-types freshness gate (R-63, B-29). Neither frontend uses prettier — eslint is the formatter gate
+- [x] 7.5 Both: `scripts/status.sh` → `STATUS.md` via `make status` (B-30)
 
 ---
 
@@ -108,4 +110,4 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 
 ## DONE
 
-- Phase 0 recon (2026-09-07) · D1 = B (2026-09-09) · Phase 0.5 risk fixes (2026-09-09) · Phases 1–4 complete (2026-09-10) · Phase 5 complete (2026-09-11) · Phase 6.1/6.2/6.5 complete (2026-09-11)
+- Phase 0 recon (2026-09-07) · D1 = B (2026-09-09) · Phase 0.5 risk fixes (2026-09-09) · Phases 1–4 complete (2026-09-10) · Phase 5 complete (2026-09-11) · Phase 6 (6.1/6.2/6.4/6.5) + Phase 7 complete (2026-09-11)

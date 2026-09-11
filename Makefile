@@ -65,10 +65,9 @@ logs: ## Tail both Docker stacks
 # ── Quality gates ──────────────────────────────────────────────────
 check: check-billing check-buchhaltung ## Every gate of both products
 
-check-billing: ## billing: ruff · pytest (starts the Docker db) · tsc · lint · vitest · build
+check-billing: ## billing: make check (lint · types · pytest · vitest · e2e) — starts the Docker db
 	cd $(BILLING) && docker compose up -d db >/dev/null && sleep 3
-	cd $(BILLING)/backend && venv/bin/python -m ruff check app tests && venv/bin/python -m pytest -q
-	cd $(BILLING)/frontend && npx tsc --noEmit -p . && npm run lint && npm run test -- --run && npm run build
+	cd $(BILLING) && make check
 
 check-buchhaltung: ## buchhaltung: make check (lint · types · unit · pytest · e2e)
 	cd $(BUCHHALTUNG) && make check
