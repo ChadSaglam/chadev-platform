@@ -30,7 +30,7 @@
       "**/dist": true,
       "**/.pytest_cache": true,
       "**/.ruff_cache": true,
-      "**/Claude outputs": true
+      "**/*outputs": true
     },
     "search.exclude": {
       "**/node_modules": true,

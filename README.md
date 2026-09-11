@@ -49,5 +49,6 @@ Docker Desktop is needed for the `up` targets.
 
 ## Status
 
+- **CI** (`.github/workflows/ci.yml`) on every push/PR: workspace + Makefile + scripts valid, contracts/ADRs have a status, tokens well-formed, roadmap has exactly one NOW, local links resolve, and both product repos still import the tokens, speak the error envelope and keep disjoint port families.
 - [STATUS.md](STATUS.md) — auto-generated every weekday morning (and on demand via *Actions → Platform status → Run workflow*): test results, size, roadmap counts, NOW items and largest files of **both** products.
 - [ROADMAP.md](ROADMAP.md) → **NOW** for the next cross-product step.

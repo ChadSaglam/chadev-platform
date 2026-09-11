@@ -1,0 +1,147 @@
+name: CI
+
+# The platform repo holds contracts, tokens, the roadmap and the dev tooling
+# of both products. Nothing here runs at runtime, so CI checks the things
+# that break the two products when they drift: valid workspace + Makefile,
+# consistent contracts, roadmap hygiene, and that every product-side file we
+# point at still exists.
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Files · Makefile · scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Workspace file is valid and lists exactly the three repos
+        run: |
+          python3 - <<'PY'
+          import json, re, sys
+          raw = open("chadev-platform.code-workspace", encoding="utf-8").read()
+          raw = re.sub(r"^\s*//.*$", "", raw, flags=re.M)          # strip // comments
+          ws = json.loads(raw)
+          paths = sorted(f["path"] for f in ws["folders"])
+          expected = sorted([".", "../billing", "../buchhaltung"])
+          assert paths == expected, f"folders must be {expected}, got {paths}"
+          print("workspace ok:", paths)
+          PY
+
+      - name: Makefile parses and every target has help text
+        run: |
+          make -n help >/dev/null
+          missing=$(grep -E '^[a-z][a-z-]*:' Makefile | grep -v '##' || true)
+          if [ -n "$missing" ]; then echo "targets without ## help:"; echo "$missing"; exit 1; fi
+
+      - name: Shell scripts
+        run: |
+          sudo apt-get install -y -qq shellcheck >/dev/null
+          shellcheck -S warning scripts/*.sh
+          bash -n scripts/*.sh
+
+      - name: Workflows are valid YAML
+        run: |
+          pip install -q pyyaml
+          python3 -c "import yaml,glob; [yaml.safe_load(open(f)) for f in glob.glob('.github/workflows/*.yml')]; print('yaml ok')"
+
+      - name: Trailing whitespace / missing final newline
+        run: |
+          bad=0
+          while IFS= read -r f; do
+            if [ -s "$f" ] && [ "$(tail -c1 "$f" | od -An -c | tr -d ' ')" != '\n' ]; then echo "no final newline: $f"; bad=1; fi
+            if grep -nE '[[:space:]]+$' "$f" >/dev/null; then echo "trailing whitespace: $f"; bad=1; fi
+          done < <(git ls-files '*.md' '*.yml' '*.css' '*.sh' 'Makefile' '*.code-workspace')
+          exit $bad
+
+  contracts:
+    name: Contracts · tokens · roadmap
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Every contract and ADR has a Status line
+        run: |
+          bad=0
+          for f in contracts/*.md docs/ADR-0[0-9][1-9]*.md; do
+            grep -qiE 'Status: ?\*?\*?(proposed|accepted|deferred|superseded)' "$f" || { echo "no Status: proposed|accepted|deferred|superseded in $f"; bad=1; }
+          done
+          exit $bad
+
+      - name: tokens.css only defines CSS variables
+        run: |
+          python3 - <<'PY'
+          import re
+          css = open("tokens/tokens.css", encoding="utf-8").read()
+          body = re.sub(r"/\*.*?\*/", "", css, flags=re.S)
+          decls = re.findall(r"^\s*([a-zA-Z-]+)\s*:", body, flags=re.M)
+          bad = [d for d in decls if not d.startswith("--")]
+          assert not bad, f"non-variable declarations in tokens.css: {bad}"
+          # one light block + one dark block: a name may appear at most twice
+          names = re.findall(r"(--[a-z0-9-]+)\s*:", body)
+          dupes = {n for n in names if names.count(n) > 2}
+          assert not dupes, f"tokens defined more than twice: {dupes}"
+          print(f"tokens ok: {len(set(names))} variables")
+          PY
+
+      - name: ROADMAP has one current phase and one next action
+        run: |
+          test "$(grep -c '^\*\*Current phase:' ROADMAP.md)" = 1
+          test "$(grep -c '^\*\*Next action:' ROADMAP.md)" = 1
+          # every unchecked item carries an effort tag (S/M/L)
+          bad=$(grep -E '^- \[ \] [0-9]+\.[0-9]+' ROADMAP.md | grep -vE '\((S|M|L)\)$' || true)
+          if [ -n "$bad" ]; then echo "items without effort tag:"; echo "$bad"; exit 1; fi
+
+      - name: Local links in Markdown resolve
+        run: |
+          python3 - <<'PY'
+          import re, os, glob, sys
+          bad = []
+          for f in glob.glob("**/*.md", recursive=True):
+              for link in re.findall(r"\]\(([^)#\s]+)(?:#[^)]*)?\)", open(f, encoding="utf-8").read()):
+                  if re.match(r"^[a-z]+:", link): continue
+                  target = os.path.normpath(os.path.join(os.path.dirname(f), link))
+                  if not os.path.exists(target): bad.append(f"{f} -> {link}")
+          if bad: print("\n".join(bad)); sys.exit(1)
+          print("links ok")
+          PY
+
+  products:
+    name: Product repos still match the contracts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { path: platform }
+      - uses: actions/checkout@v4
+        with: { repository: ChadSaglam/billing, ref: main, path: billing }
+      - uses: actions/checkout@v4
+        with: { repository: ChadSaglam/buchhaltung, ref: main, path: buchhaltung }
+
+      - name: Both products import the shared tokens first
+        run: |
+          grep -q 'chadev-platform/tokens\|tokens.css' billing/frontend/src/index.css
+          grep -q 'chadev-platform/tokens\|tokens.css' buchhaltung/frontend/src/app/globals.css
+
+      - name: Both products speak the error envelope
+        run: |
+          grep -rq '"request_id"' billing/backend/app/core/errors.py
+          grep -rq '"request_id"' buchhaltung/backend/app/core/errors.py
+
+      - name: Port families do not overlap
+        run: |
+          python3 - <<'PY'
+          import re
+          def ports(path):
+              txt = open(path, encoding="utf-8").read()
+              # "${VAR:-9000}:8000" (billing) or "8000:8000" (buchhaltung)
+              return {int(p) for p in re.findall(r'"(?:\$\{\w+:-)?(\d+)\}?:\d+"', txt)}
+          b, h = ports("billing/docker-compose.yml"), ports("buchhaltung/docker-compose.yml")
+          assert not (b & h), f"billing and buchhaltung publish the same port(s): {b & h}"
+          assert b <= {5050, 9000, 9432}, f"unexpected billing ports {b}"
+          print("billing", sorted(b), "buchhaltung", sorted(h))
+          PY
