@@ -3,7 +3,7 @@
 > One running list for everything that touches **both** products. Tick boxes, never duplicate.
 > Product-only work lives in `billing/ROADMAP.md` (R-xx) and `buchhaltung/ROADMAP.md` (B-xx).
 > Rule: one task at a time. Each `[ ]` ≈ 20 min. Effort: S < 1h · M < 4h · L > 4h
-> Updated: 2026-09-10
+> Updated: 2026-09-11
 
 ---
 
@@ -16,8 +16,9 @@
 **Phase 2 ✅ complete (2026-09-10)** — per-tenant rate limits, scoped-query helper + guard test, export auth, RLS deferred (ADR-002), security workflow in both repos.
 **Phase 3 ✅ complete (2026-09-10)** — money-math bugs fixed in both products, Vitest + Playwright happy paths in CI, buchhaltung pickle RCE closed.
 **Phase 4 ✅ complete (2026-09-10)** — worker services in both compose files, receipts persisted through `StorageBackend`, rich `/api/health`, buchhaltung page splits, billing bulk-email 422 bug found + fixed.
-**Current phase: Phase 5 — Dynamic & user-friendly UX**
-**Next action:** 5.1 billing i18n DE/EN (R-25) + 5.3 colour tokens (both).
+**Phase 5 ✅ complete (2026-09-11)** — billing speaks DE/EN, both apps on the brand blue `#2451e6`, every page has loading/empty/error states, axe gates in both Playwright suites (found: billing dialogs never returned focus; buchhaltung `dark:` utilities never applied).
+**Current phase: Phase 6 — Together: cross-product features**
+**Next action:** 6.1 SSO (billing issues, buchhaltung verifies — ADR-001) + app switcher.
 
 ---
 
@@ -30,7 +31,7 @@
 | Auth | JWT access+refresh (jti), roles admin/editor/viewer, trial gate | JWT, role owner only, plan free |
 | Tenant | `subscription_plan, trial_ends_at, is_active` | same + `slug` since 1.4 |
 | Errors | `{"detail"}` **+ `{"error":{code,message,request_id}}` since 0.5** | `{"error":{code,message,request_id}}` + Sentry |
-| Tests | 129 backend · 21 unit · 1 e2e | 309 backend · 58 unit · 3 e2e |
+| Tests | 129 backend · 41 unit · 7 e2e | 309 backend · 65 unit · 14 e2e |
 
 Shared today: **the error envelope and the storage interface** (both added in 0.5). Still separate: tenants, users, login, design.
 
@@ -76,11 +77,11 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 
 ## Phase 5 — Dynamic & user-friendly UX — L
 
-- [ ] 5.1 billing: i18n DE/EN reusing buchhaltung `lib/i18n.ts` pattern (R-25) (M)
+- [x] 5.1 billing: i18n DE/EN (R-25) — `lib/i18n.ts` + `useT()`, switcher persisted, `<html lang>` follows. PDF/email language per document → R-101
 - [x] 5.2 buchhaltung: `settings/page.tsx`, `insights/page.tsx` ≤200 lines (B-10) — done in Phase 4
-- [ ] 5.3 Map colours to tokens (shadcn HSL ↔ hex) and decide the brand colour — both apps look like one product (M)
-- [ ] 5.4 Both: loading / empty / error states audit (R-24, B-18) (M)
-- [ ] 5.5 Both: a11y pass (R-23, B-19) (M)
+- [x] 5.3 Brand = `#2451e6` (dark `#3b6cf6`, link text uses brand-hover) — billing maps shadcn HSL triplets to `--cd-*`, buchhaltung resolves its palette to `--cd-*` (found + fixed: accent store shadowed the tokens). Dark success/warning/danger added to tokens.
+- [x] 5.4 Both: `ErrorState` / `EmptyState` / `PageSkeleton` on every route (R-24, B-18); before/after tables in each ROADMAP
+- [x] 5.5 Both: skip link, labels, focus traps, `lang`, contrast ≥ 4.5:1; `@axe-core/playwright` gate light + dark (R-23, B-19). Open: R-102 dark brand text, 2 moderate axe advisories in buchhaltung
 
 ## Phase 6 — Together: cross-product features — L
 
@@ -106,4 +107,4 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 
 ## DONE
 
-- Phase 0 recon (2026-09-07) · D1 = B (2026-09-09) · Phase 0.5 risk fixes (2026-09-09) · Phases 1–4 complete (2026-09-10)
+- Phase 0 recon (2026-09-07) · D1 = B (2026-09-09) · Phase 0.5 risk fixes (2026-09-09) · Phases 1–4 complete (2026-09-10) · Phase 5 complete (2026-09-11)
