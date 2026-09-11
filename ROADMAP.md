@@ -15,8 +15,9 @@
 **Phase 1 ✅ complete (2026-09-10)** — contracts accepted (auth, errors, tenant), ADR-001 SSO decided, tokens imported by both apps.
 **Phase 2 ✅ complete (2026-09-10)** — per-tenant rate limits, scoped-query helper + guard test, export auth, RLS deferred (ADR-002), security workflow in both repos.
 **Phase 3 ✅ complete (2026-09-10)** — money-math bugs fixed in both products, Vitest + Playwright happy paths in CI, buchhaltung pickle RCE closed.
-**Current phase: Phase 4 — Professional polish**
-**Next action:** 4.1 worker services (R-84, B-08) + 4.3 `/api/health` (R-75, B-13).
+**Phase 4 ✅ complete (2026-09-10)** — worker services in both compose files, receipts persisted through `StorageBackend`, rich `/api/health`, buchhaltung page splits, billing bulk-email 422 bug found + fixed.
+**Current phase: Phase 5 — Dynamic & user-friendly UX**
+**Next action:** 5.1 billing i18n DE/EN (R-25) + 5.3 colour tokens (both).
 
 ---
 
@@ -29,7 +30,7 @@
 | Auth | JWT access+refresh (jti), roles admin/editor/viewer, trial gate | JWT, role owner only, plan free |
 | Tenant | `subscription_plan, trial_ends_at, is_active` | same + `slug` since 1.4 |
 | Errors | `{"detail"}` **+ `{"error":{code,message,request_id}}` since 0.5** | `{"error":{code,message,request_id}}` + Sentry |
-| Tests | 112 backend · 21 unit · 1 e2e | 280 backend · 58 unit · 3 e2e |
+| Tests | 129 backend · 21 unit · 1 e2e | 309 backend · 58 unit · 3 e2e |
 
 Shared today: **the error envelope and the storage interface** (both added in 0.5). Still separate: tenants, users, login, design.
 
@@ -69,14 +70,14 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 
 ## Phase 4 — Professional polish — M
 
-- [ ] 4.1 Both: background jobs → separate worker compose service (R-84, B-08) (M)
-- [ ] 4.2 buchhaltung: persist receipts through `StorageBackend` (B-09) (M)
-- [ ] 4.3 Both: `/api/health` → version, db, migration_head, storage (R-75, B-13) (S)
+- [x] 4.1 Both: background jobs → separate worker compose service. billing `python -m app.jobs` + `RUN_JOBS_IN_API` (R-84); buchhaltung `python -m app.worker` + `RUN_WORKER_IN_API`, `training_jobs` table `52eb7a4363f0` (B-08). Local dev keeps in-process mode; compose runs `jobs` / `worker` services.
+- [x] 4.2 buchhaltung: receipts + statement PDFs persisted through `StorageBackend` before extraction, `bookings.source_key` `55e64308d75f`, `GET /api/bookings/{id}/source` (B-09)
+- [x] 4.3 Both: `/api/health` → `status, version, database, migration, storage, jobs|worker` (prod: status+version only) (R-75, B-13). Also: settings/insights split (B-10, pulled from 5.2), billing bulk send-email route-order bug fixed (was 422), PDF prints the document's currency.
 
 ## Phase 5 — Dynamic & user-friendly UX — L
 
 - [ ] 5.1 billing: i18n DE/EN reusing buchhaltung `lib/i18n.ts` pattern (R-25) (M)
-- [ ] 5.2 buchhaltung: `settings/page.tsx`, `insights/page.tsx` ≤200 lines (B-10) (M)
+- [x] 5.2 buchhaltung: `settings/page.tsx`, `insights/page.tsx` ≤200 lines (B-10) — done in Phase 4
 - [ ] 5.3 Map colours to tokens (shadcn HSL ↔ hex) and decide the brand colour — both apps look like one product (M)
 - [ ] 5.4 Both: loading / empty / error states audit (R-24, B-18) (M)
 - [ ] 5.5 Both: a11y pass (R-23, B-19) (M)
@@ -105,4 +106,4 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 
 ## DONE
 
-- Phase 0 recon (2026-09-07) · D1 = B (2026-09-09) · Phase 0.5 risk fixes (2026-09-09) · Phases 1–3 complete (2026-09-10)
+- Phase 0 recon (2026-09-07) · D1 = B (2026-09-09) · Phase 0.5 risk fixes (2026-09-09) · Phases 1–4 complete (2026-09-10)
