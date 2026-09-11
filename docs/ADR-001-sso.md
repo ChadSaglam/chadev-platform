@@ -1,6 +1,6 @@
 # ADR-001: Single sign-on direction
 
-Date: 2026-09-10 · Status: **accepted** (Phase 1.5)
+Date: 2026-09-10 · Status: **accepted** (Phase 1.5) · Amended 2026-09-11 (Phase 6.1, see below)
 
 ## Context
 Both products issue their own JWTs with the same claim shape (contracts/auth.md) but from separate `users`/`tenants` tables. Phase 6 needs one login and an app switcher, without a rewrite and while each product stays sellable on its own.
@@ -21,3 +21,9 @@ Both products issue their own JWTs with the same claim shape (contracts/auth.md)
 - Separate IdP (Keycloak/Auth0): a third deployable and monthly cost for two apps and one developer.
 - buchhaltung as issuer: billing already has refresh tokens, roles, trial gate and RBAC tests.
 - Shared `users` table / one database: breaks "separately".
+
+## Amendment 2026-09-11 (Phase 6.1)
+
+- §2 step 1 uses a **dedicated** `PLATFORM_SHARED_SECRET` for the SSO hand-off and event signatures instead of reusing each app's `SECRET_KEY`: an app's own session key never leaves that app, and rotating the platform secret does not log anyone out.
+- §4 amended: buchhaltung provisions a *shadow user* on first SSO (`users.platform_user_id`, `auth_source='platform'`, no usable password). Every router, the audit log and the review queue key on a local `users.id`; a claims-only identity would have forked all of them. The shadow user is still not a second account the person manages — it has no password and cannot log in locally.
+- Wire format: contracts/sso.md. Server-to-server events: contracts/events.md.
