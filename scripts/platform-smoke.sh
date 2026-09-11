@@ -12,8 +12,21 @@ set -euo pipefail
 here=$(cd "$(dirname "$0")/.." && pwd)
 BILLING=${BILLING:-$here/../billing}
 BUCH=${BUCHHALTUNG:-$here/../buchhaltung}
-BILLING_DB=${BILLING_DB:-postgresql://postgres@127.0.0.1:5433/billing_smoke}
-BUCH_DB=${BUCH_DB:-postgresql+asyncpg://postgres@127.0.0.1:5433/buchhaltung_smoke}
+envget() { grep -E "^$2=" "$1" 2>/dev/null | head -1 | cut -d= -f2- | tr -d '"' || true; }
+# Databases: derive from each product's .env (the Docker Postgres each `make dev`
+# already uses), fall back to a local trust cluster on 5433. Override with BILLING_DB / BUCH_DB.
+if [ -z "${BILLING_DB:-}" ]; then
+  if [ -f "$BILLING/.env" ]; then
+    BILLING_DB="postgresql://$(envget "$BILLING/.env" POSTGRES_USER):$(envget "$BILLING/.env" POSTGRES_PASSWORD)@127.0.0.1:$(envget "$BILLING/.env" DB_PORT)/billing_smoke"
+    BILLING_DB=${BILLING_DB/:@/@}; BILLING_DB=${BILLING_DB/@127.0.0.1:\//@127.0.0.1:9432/}
+  else
+    BILLING_DB=postgresql://postgres@127.0.0.1:5433/billing_smoke
+  fi
+fi
+if [ -z "${BUCH_DB:-}" ]; then
+  from_env=$(envget "$BUCH/backend/.env" DATABASE_URL)
+  if [[ $from_env == postgresql* ]]; then BUCH_DB="${from_env%/*}/buchhaltung_smoke"; else BUCH_DB=postgresql+asyncpg://postgres@127.0.0.1:5433/buchhaltung_smoke; fi
+fi
 SECRET=$(python3 -c "import secrets; print(secrets.token_hex(32))")
 BPORT=9100; HPORT=8100
 py_billing=$BILLING/backend/venv/bin/python; [ -x "$py_billing" ] || py_billing=$BILLING/backend/.venv/bin/python; [ -x "$py_billing" ] || py_billing=python
