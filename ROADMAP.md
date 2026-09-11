@@ -17,8 +17,9 @@
 **Phase 3 ✅ complete (2026-09-10)** — money-math bugs fixed in both products, Vitest + Playwright happy paths in CI, buchhaltung pickle RCE closed.
 **Phase 4 ✅ complete (2026-09-10)** — worker services in both compose files, receipts persisted through `StorageBackend`, rich `/api/health`, buchhaltung page splits, billing bulk-email 422 bug found + fixed.
 **Phase 5 ✅ complete (2026-09-11)** — billing speaks DE/EN, both apps on the brand blue `#2451e6`, every page has loading/empty/error states, axe gates in both Playwright suites (found: billing dialogs never returned focus; buchhaltung `dark:` utilities never applied).
-**Current phase: Phase 6 — Together: cross-product features**
-**Next action:** 6.1 SSO (billing issues, buchhaltung verifies — ADR-001) + app switcher.
+**Phase 6 (core) ✅ 2026-09-11** — one login: billing mints a 120 s SSO token, buchhaltung verifies it, mirrors the tenant and provisions a shadow user; app switcher in both top bars; a paid invoice becomes a `1020/1100` booking through signed, durable events. `make link` + `make smoke` prove it end to end.
+**Current phase: Phase 6 — remaining: 6.3 supplier-invoice suggestions (L), 6.4 payments decision**
+**Next action:** 6.4 decide Stripe vs Lemon Squeezy (needs Chad), then Phase 7 developer experience.
 
 ---
 
@@ -85,11 +86,11 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 
 ## Phase 6 — Together: cross-product features — L
 
-- [ ] 6.1 SSO: log in once, app switcher in the top bar (M)
-- [ ] 6.2 billing paid invoice → `POST` booking into buchhaltung (webhook exists there) (M)
+- [x] 6.1 SSO: `contracts/sso.md` — billing `GET /api/sso/launch` → `<buchhaltung>/sso#token=…` → `POST /api/auth/sso` (single-use jti, 120 s, `PLATFORM_SHARED_SECRET`); Apps switcher both sides (R-103, B-36). ADR-001 amended: dedicated secret, shadow users.
+- [x] 6.2 `contracts/events.md` — billing `outbound_events` table + jobs delivery with backoff, HMAC `X-Platform-Signature`; buchhaltung `POST /api/platform/events` → idempotent booking on `source_key` (R-104, B-37). Reversal `invoice.unpaid` parked (R-105, B-38).
 - [ ] 6.3 buchhaltung scanned supplier invoice → suggest client/service in billing (L)
 - [ ] 6.4 Shared plan/billing: Stripe vs Lemon Squeezy (decision) (L)
-- [ ] 6.5 One onboarding: create tenant once, enable products as modules (M)
+- [x] 6.5 Tenant mirrored on first SSO (`tenants.platform_tenant_id`, name/plan/trial refreshed on every hop, Kontenplan seeded). Module toggles not needed yet — both products are on for every mirrored tenant.
 
 ## Phase 7 — Developer experience — S
 
@@ -107,4 +108,4 @@ Shared today: **the error envelope and the storage interface** (both added in 0.
 
 ## DONE
 
-- Phase 0 recon (2026-09-07) · D1 = B (2026-09-09) · Phase 0.5 risk fixes (2026-09-09) · Phases 1–4 complete (2026-09-10) · Phase 5 complete (2026-09-11)
+- Phase 0 recon (2026-09-07) · D1 = B (2026-09-09) · Phase 0.5 risk fixes (2026-09-09) · Phases 1–4 complete (2026-09-10) · Phase 5 complete (2026-09-11) · Phase 6.1/6.2/6.5 complete (2026-09-11)

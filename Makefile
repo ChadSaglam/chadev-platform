@@ -9,7 +9,7 @@ SHELL := /bin/bash
 BILLING     := ../billing
 BUCHHALTUNG := ../buchhaltung
 
-.PHONY: help setup dev dev-billing dev-buchhaltung stop up up-billing up-buchhaltung down logs check check-billing check-buchhaltung status pull
+.PHONY: help setup link smoke dev dev-billing dev-buchhaltung stop up up-billing up-buchhaltung down logs check check-billing check-buchhaltung status pull
 
 help: ## Show this help
 	@grep -hE '^[a-zA-Z0-9_-]+:.*?## ' $(MAKEFILE_LIST) | awk 'BEGIN{FS=":.*?## "}{printf "  \033[36m%-18s\033[0m %s\n", $$1, $$2}'
@@ -20,6 +20,12 @@ setup: ## Install/refresh dependencies of both products (venv + npm + Playwright
 	cd $(BILLING)/backend && venv/bin/pip install -q -r requirements-dev.txt
 	cd $(BILLING)/frontend && npm install && npx playwright install chromium
 	cd $(BUCHHALTUNG) && make setup
+
+link: ## Link both products for SSO + events (one shared secret in both .env files, cross URLs)
+	@scripts/link.sh
+
+smoke: ## Cross-product smoke: SSO hop + paid invoice → booking (both backends on the e2e ports)
+	@scripts/platform-smoke.sh
 
 # ── Local (venv + npm, hot reload) ─────────────────────────────────
 dev: ## Both products locally, one terminal (Ctrl-C stops both)

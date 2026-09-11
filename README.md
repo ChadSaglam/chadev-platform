@@ -10,7 +10,7 @@ The thin layer that lets two independent products behave like one platform.
 Each product runs, deploys and sells on its own. This repo holds only what they must **agree on**:
 
 ```
-contracts/     the shared API contracts (auth/JWT, tenant, errors)   ← source of truth
+contracts/     the shared API contracts (auth/JWT, tenant, errors, sso, events)   ← source of truth
 tokens/        design tokens (CSS variables) so both apps look like one brand
 ROADMAP.md     the ONE cross-product roadmap (phases 1–7)
 docs/          decisions (ADR-style, one file per decision)
@@ -29,6 +29,8 @@ Open everything at once: `code chadev-platform.code-workspace` (expects the thre
 | both products in Docker | `make up` (`make down`, `make logs`) | same URLs; migrations run on start |
 | one product in Docker | `make up-billing` / `make up-buchhaltung` | |
 | every quality gate | `make check` | ruff · pytest · tsc · lint · vitest · build · e2e |
+| link the products (once) | `make link` | one `PLATFORM_SHARED_SECRET` in both `.env` files + cross URLs — needed for the app switcher, SSO and paid-invoice → booking |
+| prove they talk to each other | `make smoke` | register in billing → SSO into buchhaltung → invoice paid → booking appears (both backends on 9100/8100, throw-away DBs) |
 | what's going on | `make status` | test counts, sizes, NOW items of both |
 
 Port families never overlap, so "together" is just both at once:

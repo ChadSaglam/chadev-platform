@@ -36,9 +36,9 @@ Receiver answers `202 {"status":"accepted"}` (new), `200 {"status":"duplicate"}`
 ```
 
 buchhaltung creates **one** booking, idempotent on `bookings.source_key = "billing:invoice:<id>:paid"` (B-09 column):
-`Bank (1020) an Debitoren (1100)`, amount = `total`, date = `paid_at`, text = `Zahlung <number> <client.name>`, `source = "billing"`. Money is parsed from the decimal **string** and rounded half-up to 0.05 like every other booking (B-05).
+`Bank (1020) an Debitoren (1100)`, amount = `total`, date = `paid_at`, text = `Zahlung <number> <client.name>`, `source = "billing"`. Money is parsed from the decimal **string** and rounded half-up to 0.01 with `round_chf` like every other booking (B-05) — the booking must equal the invoice total, which billing already cash-rounded.
 
-Reversal (`invoice.unpaid`, status set back from `paid`) is **not** in v1 — logged as R-104 / B-36.
+Reversal (`invoice.unpaid`, status set back from `paid`) is **not** in v1 — logged as R-105 / B-38.
 
 ## Versioning
 
