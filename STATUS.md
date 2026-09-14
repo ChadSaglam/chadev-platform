@@ -1,6 +1,6 @@
 # Platform status
 
-_Generated 2026-09-11 16:38 UTC by `platform-status.yml`. Do not edit by hand._
+_Generated 2026-09-14 10:32 UTC by `platform-status.yml`. Do not edit by hand._
 
 **Platform roadmap:** 1 open · 37 done — [ROADMAP.md](ROADMAP.md)
 
@@ -27,15 +27,17 @@ _Generated 2026-09-11 16:38 UTC by `platform-status.yml`. Do not edit by hand._
 ### buchhaltung
 | | |
 |---|---|
-| last commit | ecc48b9 · dx: pre-commit api-types + lint hooks, STATUS.md generator (B-29, B-30) · 2026-09-11 |
+| last commit | e01b3fa · docs: deep review 2026-09-12, ADR-002 (RLS), B-36/B-37 deploy checklist, brainstorm; roadmap reprioritised (B-39…B-62) · 2026-09-12 |
 | backend tests | **.........................s.................s.........                    [100%]** · 200 test functions in 16 files |
 | size | 11825 py · 13573 ts |
-| roadmap | **13 open** · 25 done |
+| roadmap | **36 open** · 25 done |
 
 **NOW (from ROADMAP.md):**
-  - **B-14** Review queue: optimistic accept/reject with rollback; keyboard `j/k/a/r`. (Queue is on SWR…
-  - **B-16** Dashboard KPIs auto-refresh (SWR `refreshInterval`), no reload. — `L` / `S`…
-  - **B-21** Replace remaining `err: any` in scanner/modell hooks with generated types (5 eslint warnin…
+  - **B-39** `training_data` table has **no migration** and `TrainingRow` is not exported from `app.mod…
+  - **B-40** Wire the role ladder: `require_editor` on every mutating route, `require_admin` on Kontenp…
+  - **B-41** Production compose: `ENVIRONMENT=production` on api + worker, `${SECRET_KEY:?}`, drop `--r…
+  - **B-42** SSRF: `ollama_base_url` (and latent `ocr_command`) become read-only from `settings` — drop…
+  - **B-43** Email export hardening: `EmailStr` single recipient, `html.escape` every cell, `heavy_limi…
 
 **Largest files:**
   - `frontend/src/lib/api-types.ts` 2907
